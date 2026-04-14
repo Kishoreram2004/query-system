@@ -11,7 +11,7 @@ export const registerUser = async (email, password, role) => {
   const res = await createUserWithEmailAndPassword(auth, email, password);
 
   await setDoc(doc(db, "users", res.user.uid), {
-    email,
+    email, 
     role
   });
 };
@@ -24,7 +24,7 @@ export const loginUser = (email, password) =>
 export const logoutUser = () => signOut(auth);
 
 // Get user role
-export const getUserRole = async (uid) => {
+export const getUserRole = async (uid) => { //getUserRole(uid) is used to retrieve a user's role/permission level from the database.
   const docRef = doc(db, "users", uid);
   const docSnap = await getDoc(docRef);
   return docSnap.exists() ? docSnap.data().role : null;
