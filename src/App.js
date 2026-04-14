@@ -1,14 +1,15 @@
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
+import QueryDetail from "./pages/QueryDetail";
 
 function App() {
   return (
-    <div>
-      <Register />
-      <Login />
-      <Dashboard/>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/query/:id" element={<QueryDetail />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

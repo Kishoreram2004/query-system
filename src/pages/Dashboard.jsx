@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { addQuery, getQueries, updateQueryStatus } from "../services/queryService";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const { user, role } = useAuth();
@@ -57,7 +58,9 @@ export default function Dashboard() {
       <div>
         {queries.map((q) => (
           <div key={q.id} style={{ border: "1px solid", margin: 10 }}>
-            <h3>{q.title}</h3>
+            <Link to={`/query/${q.id}`}>
+                <h3>{q.title}</h3>
+            </Link>
             <p>{q.description}</p>
             <p>Status: {q.status}</p>
 
