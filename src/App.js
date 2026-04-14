@@ -1,9 +1,13 @@
-import { auth } from "./firebase/config";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function App() {
-  console.log("Firebase Connected:", auth);
-
-  return <h1>Firebase Setup Done 🔥</h1>;
+  return (
+    <div>
+      <Register />
+      <Login />
+    </div>
+  );
 }
 
 export default App;
