@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   signOut
 } from "firebase/auth";
+
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
 // Register

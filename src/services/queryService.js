@@ -7,7 +7,10 @@ import {
   onSnapshot,
   updateDoc,
   doc,
-  query
+  query,
+  deleteDoc,
+  getDocs,
+  writeBatch
 } from "firebase/firestore";
 
 // Add Query
@@ -31,10 +34,34 @@ export const updateQueryStatus = (id, status) => {
   return updateDoc(doc(db, "queries", id), { status });
 };
 
+// Delete query and all its comments
+export const deleteQueryAndComments = async (queryId) => {
+  const batch = writeBatch(db);
+  const commentsQuery = query(
+    collection(db, "comments"),
+    where("queryId", "==", queryId)
+  );
+  const commentSnaps = await getDocs(commentsQuery);
+  commentSnaps.forEach((snap) => batch.delete(snap.ref));
+  batch.delete(doc(db, "queries", queryId));
+  await batch.commit();
+};
+
+// Get single query (real-time)
+export const getQueryById = (id, callback) => {
+  return onSnapshot(doc(db, "queries", id), (snapshot) => {
+    callback(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
+  });
+};
 
 // Add comment
 export const addComment = async (comment) => {
   await addDoc(collection(db, "comments"), comment);
+};
+
+// Delete single comment
+export const deleteComment = (commentId) => {
+  return deleteDoc(doc(db, "comments", commentId));
 };
 
 // Get comments for a query
