@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   addComment,
   deleteComment,
   deleteQueryAndComments,
-  getComments,
   getQueryById
 } from "../services/queryService";
 import { useAuth } from "../context/AuthContext";
@@ -15,33 +14,29 @@ export default function QueryDetail() {
   const navigate = useNavigate();
 
   const [queryItem, setQueryItem] = useState(null);
-  const [comments, setComments] = useState([]);
   const [text, setText] = useState("");
+  const [error, setError] = useState("");
 
-  // Fetch query
-  useEffect(() => {
-    const unsubscribe = getQueryById(id, setQueryItem);
-    return () => unsubscribe();
+  const loadQuery = useCallback(async () => {
+    try {
+      setError("");
+      const query = await getQueryById(id);
+      setQueryItem(query);
+    } catch (err) {
+      setError(err.message || "Failed to load query.");
+    }
   }, [id]);
 
-  // Fetch comments
   useEffect(() => {
-    const unsubscribe = getComments(id, setComments);
-    return () => unsubscribe();
-  }, [id]);
+    loadQuery();
+  }, [loadQuery]);
 
-  // Add comment
   const handleAdd = async () => {
     if (!text) return;
 
-    await addComment({
-      queryId: id,
-      userId: user.uid,
-      text,
-      createdAt: new Date()
-    });
-
+    await addComment(id, text);
     setText("");
+    await loadQuery();
   };
 
   const handleDeleteQuery = async () => {
@@ -52,8 +47,11 @@ export default function QueryDetail() {
   };
 
   const handleDeleteComment = async (commentId) => {
-    await deleteComment(commentId);
+    await deleteComment(id, commentId);
+    await loadQuery();
   };
+
+  const comments = queryItem?.comments || [];
 
   return (
     <div className="page">
@@ -64,7 +62,7 @@ export default function QueryDetail() {
             <h2 className="detail-title">
               {queryItem?.title || "Loading query..."}
             </h2>
-            {queryItem?.userId === user?.uid && (
+            {queryItem?.userId === user?.id && (
               <button onClick={handleDeleteQuery} className="btn btn-danger">
                 Delete Query
               </button>
@@ -118,7 +116,7 @@ export default function QueryDetail() {
               {comments.map((c) => (
                 <div key={c.id} className="comment-card">
                   <p className="comment-text">{c.text}</p>
-                  {c.userId === user?.uid && (
+                  {c.userId === user?.id && (
                     <button onClick={() => handleDeleteComment(c.id)} className="btn btn-danger comment-delete">
                       Delete
                     </button>
@@ -130,6 +128,7 @@ export default function QueryDetail() {
                   No comments yet. Be the first to leave an update.
                 </div>
               )}
+              {error && <div className="alert">{error}</div>}
             </div>
           </div>
         </div>

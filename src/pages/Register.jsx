@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -8,20 +9,17 @@ export default function Register() {
   const [role, setRole] = useState("student");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { setUser, setRole: setAuthRole } = useAuth();
 
   const handleRegister = async () => {
     setError("");
     try {
-      await registerUser(email, password, role);
+      const user = await registerUser(email, password, role);
+      setUser(user);
+      setAuthRole(user.role);
       navigate("/");
     } catch (err) {
-      const message =
-        err?.code === "auth/email-already-in-use"
-          ? "This email is already registered."
-          : err?.code === "auth/weak-password"
-          ? "Password is too weak. Use at least 6 characters."
-          : "Registration failed. Please try again.";
-      setError(message);
+      setError(err.message || "Registration failed. Please try again.");
     }
   };
 

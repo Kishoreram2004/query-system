@@ -6,45 +6,57 @@ import { logoutUser } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-  const { user, role } = useAuth();
+  const { user, role, setUser, setRole } = useAuth();
   const [queries, setQueries] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await logoutUser();
+  const loadQueries = async () => {
+    try {
+      setError("");
+      const data = await getQueries();
+      setQueries(data);
+    } catch (err) {
+      setError(err.message || "Failed to load queries.");
+    }
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setUser(null);
+    setRole(null);
     navigate("/login");
   };
-  // Fetch queries
+
   useEffect(() => {
-    const unsubscribe = getQueries(setQueries);
-    return () => unsubscribe();
+    loadQueries();
   }, []);
 
-  // Add query
   const handleAdd = async () => {
     if (!title) return;
 
-    await addQuery({
-      title,
-      description,
-      userId: user.uid,
-      status: "open",
-      createdAt: new Date()
-    });
-
+    await addQuery({ title, description });
     setTitle("");
     setDescription("");
+    await loadQueries();
   };
 
   const handleDeleteQuery = async (id) => {
     const confirmDelete = window.confirm("Delete this query and all comments?");
     if (!confirmDelete) return;
     await deleteQueryAndComments(id);
+    await loadQueries();
   };
+
+  const handleMarkResolved = async (id) => {
+    await updateQueryStatus(id, "resolved");
+    await loadQueries();
+  };
+
   const filteredQueries = queries.filter((q) =>
     q.title.toLowerCase().includes(search.toLowerCase())
   );
@@ -130,11 +142,11 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <p className="query-text">{q.description}</p>
-                  {q.userId === user?.uid && (
+                  {q.userId === user?.id && (
                     <div className="card-actions">
                       {q.status !== "resolved" && (
                         <button
-                          onClick={() => updateQueryStatus(q.id, "resolved")}
+                          onClick={() => handleMarkResolved(q.id)}
                           className="btn"
                         >
                           Mark Resolved
@@ -157,6 +169,7 @@ export default function Dashboard() {
                 No queries match your search yet. Try another title or add a new query.
               </div>
             )}
+            {error && <div className="alert">{error}</div>}
           </div>
         </div>
       </div>

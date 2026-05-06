@@ -1,81 +1,50 @@
-import { db } from "../firebase/config";
-//import { collection, addDoc, query, where, onSnapshot } from "firebase/firestore";
-import {
-  addDoc,
-  collection,
-  where,
-  onSnapshot,
-  updateDoc,
-  doc,
-  query,
-  deleteDoc,
-  getDocs,
-  writeBatch
-} from "firebase/firestore";
+import { apiRequest } from "./api";
 
-// Add Query
 export const addQuery = async (query) => {
-  await addDoc(collection(db, "queries"), query);
-};
-
-// Get Queries (real-time)
-export const getQueries = (callback) => {
-  return onSnapshot(collection(db, "queries"), (snapshot) => {
-    const queries = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    callback(queries);
+  const payload = await apiRequest("/api/queries", {
+    method: "POST",
+    body: JSON.stringify(query)
   });
+
+  return payload.query;
 };
 
-// Update status
-export const updateQueryStatus = (id, status) => {
-  return updateDoc(doc(db, "queries", id), { status });
+export const getQueries = async () => {
+  const payload = await apiRequest("/api/queries");
+  return payload.queries;
 };
 
-// Delete query and all its comments
+export const updateQueryStatus = async (id, status) => {
+  const payload = await apiRequest(`/api/queries/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
+
+  return payload.query;
+};
+
 export const deleteQueryAndComments = async (queryId) => {
-  const batch = writeBatch(db);
-  const commentsQuery = query(
-    collection(db, "comments"),
-    where("queryId", "==", queryId)
-  );
-  const commentSnaps = await getDocs(commentsQuery);
-  commentSnaps.forEach((snap) => batch.delete(snap.ref));
-  batch.delete(doc(db, "queries", queryId));
-  await batch.commit();
-};
-
-// Get single query (real-time)
-export const getQueryById = (id, callback) => {
-  return onSnapshot(doc(db, "queries", id), (snapshot) => {
-    callback(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
+  await apiRequest(`/api/queries/${queryId}`, {
+    method: "DELETE"
   });
 };
 
-// Add comment
-export const addComment = async (comment) => {
-  await addDoc(collection(db, "comments"), comment);
+export const getQueryById = async (id) => {
+  const payload = await apiRequest(`/api/queries/${id}`);
+  return payload.query;
 };
 
-// Delete single comment
-export const deleteComment = (commentId) => {
-  return deleteDoc(doc(db, "comments", commentId));
+export const addComment = async (queryId, text) => {
+  const payload = await apiRequest(`/api/queries/${queryId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ text })
+  });
+
+  return payload.comment;
 };
 
-// Get comments for a query
-export const getComments = (queryId, callback) => {
-  const q = query(
-    collection(db, "comments"),
-    where("queryId", "==", queryId)
-  );
-
-  return onSnapshot(q, (snapshot) => {
-    const comments = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    callback(comments);
+export const deleteComment = async (queryId, commentId) => {
+  await apiRequest(`/api/queries/${queryId}/comments/${commentId}`, {
+    method: "DELETE"
   });
 };

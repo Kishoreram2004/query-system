@@ -1,32 +1,36 @@
-import { auth, db } from "../firebase/config";
-import {
-  createUserWithEmailAndPassword,  
-  signInWithEmailAndPassword,
-  signOut
-} from "firebase/auth";
+import { apiRequest, clearToken, setToken } from "./api";
 
-import { doc, setDoc, getDoc } from "firebase/firestore";
+function storeAuthPayload(payload) {
+  if (payload?.token) {
+    setToken(payload.token);
+  }
 
-// Register
+  return payload.user;
+}
+
 export const registerUser = async (email, password, role) => {
-  const res = await createUserWithEmailAndPassword(auth, email, password);
-
-  await setDoc(doc(db, "users", res.user.uid), {
-    email, 
-    role
+  const payload = await apiRequest("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, role })
   });
+
+  return storeAuthPayload(payload);
 };
 
-// Login
-export const loginUser = (email, password) =>
-  signInWithEmailAndPassword(auth, email, password);
+export const loginUser = async (email, password) => {
+  const payload = await apiRequest("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password })
+  });
 
-// Logout
-export const logoutUser = () => signOut(auth);
+  return storeAuthPayload(payload);
+};
 
-// Get user role
-export const getUserRole = async (uid) => { //getUserRole(uid) is used to retrieve a user's role/permission level from the database.
-  const docRef = doc(db, "users", uid);
-  const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? docSnap.data().role : null;
+export const logoutUser = () => {
+  clearToken();
+};
+
+export const getCurrentUser = async () => {
+  const payload = await apiRequest("/api/auth/me");
+  return payload.user;
 };

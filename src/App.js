@@ -6,9 +6,19 @@ import QueryDetail from "./pages/QueryDetail";
 import { useAuth } from "./context/AuthContext";
 
 function HomeRoute() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
   if (!user) return <Navigate to="/register" replace />;
   return <Dashboard />;
+}
+
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
 }
 
 function App() {
@@ -18,7 +28,14 @@ function App() {
         <Route path="/" element={<HomeRoute />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/query/:id" element={<QueryDetail />} />
+        <Route
+          path="/query/:id"
+          element={
+            <ProtectedRoute>
+              <QueryDetail />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

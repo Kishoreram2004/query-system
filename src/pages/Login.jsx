@@ -1,25 +1,25 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { setUser, setRole } = useAuth();
 
   const handleLogin = async () => {
     setError("");
     try {
-      await loginUser(email, password);
+      const user = await loginUser(email, password);
+      setUser(user);
+      setRole(user.role);
       navigate("/");
     } catch (err) {
-      const message =
-        err?.code === "auth/invalid-credential"
-          ? "Invalid email or password."
-          : "Login failed. Please try again.";
-      setError(message);
-    }
+      setError(err.message || "Login failed. Please try again.");
+    }    
   };
 
   return (

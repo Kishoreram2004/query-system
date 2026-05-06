@@ -1,32 +1,43 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "../firebase/config";
-import { onAuthStateChanged } from "firebase/auth";
-import { getUserRole } from "../services/authService";
+import { clearToken, getToken } from "../services/api";
+import { getCurrentUser } from "../services/authService";
 
-const AuthContext = createContext(); //  Creates a shared "container" for auth data (like user info and role)
+const AuthContext = createContext();
 
-export const useAuth = () => useContext(AuthContext); //useAuth() - A hook that lets any component "grab" the current user and role data easily 
+export const useAuth = () => useContext(AuthContext);
  
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (u) {
-        setUser(u);
-        const r = await getUserRole(u.uid);
-        setRole(r);
-      } else {
+    async function loadUser() {
+      const token = getToken();
+
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        setRole(currentUser.role);
+      } catch (_error) {
+        clearToken();
         setUser(null);
         setRole(null);
+      } finally {
+        setLoading(false);
       }
-    });
-    return () => unsub();
+    }
+
+    loadUser();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, role }}>
+    <AuthContext.Provider value={{ user, role, loading, setUser, setRole }}>
       {children}
     </AuthContext.Provider>
   );
